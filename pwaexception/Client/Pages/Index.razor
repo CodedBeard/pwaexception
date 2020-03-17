@@ -1,0 +1,36 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NavigationManager
+
+<h1>Last Update: @lastUpdate</h1>
+
+@code {
+    HubConnection hubConnection;
+    string lastUpdate = string.Empty;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/clienthub"))
+            .Build();
+
+            hubConnection.On<List<string>>("LatestNews", async (incomingMessages) =>
+            {
+                lastUpdate = DateTime.Now.ToString();
+                await InvokeAsync(StateHasChanged);
+            });
+
+            await hubConnection.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            lastUpdate = ex.ToString();
+        }
+
+    }
+
+    public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
+}
